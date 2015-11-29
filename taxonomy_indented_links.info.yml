@@ -1,0 +1,5 @@
+name: Taxonomy Indented Links
+type: module
+description: Creates a block to display an indented list of taxonomy term links for a given vocabulary.
+core: 8.x
+package: Taxonomy
