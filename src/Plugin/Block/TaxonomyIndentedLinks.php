@@ -24,6 +24,9 @@ use Drupal\Core\Url;
 // Used to render the indentation.
 use Drupal\Core\Render\Renderer;
 
+// Massage the array.
+use Drupal\Component\Utility\NestedArray;
+
 /**
  * Provides a 'TaxonomyIndentedLinks' block.
  *
@@ -144,6 +147,8 @@ class TaxonomyIndentedLinks extends BlockBase implements ContainerFactoryPluginI
     // with some of the most commonly-used term values, so we find values at
     // $term->depth, not $term->get('depth')->value.
     $term = current($tree);
+
+    // If there are no terms, don't do anything.
     if (empty($term)) {
       return $build;
     }
@@ -151,27 +156,92 @@ class TaxonomyIndentedLinks extends BlockBase implements ContainerFactoryPluginI
       $base_depth = $term->depth;
     }
 
+    $c = 0;
+    $parent_array = [];
+
     // Iterate through the tree, setting up item links for each term.
     do {
-      $depth = ($term->depth - $base_depth);
 
-      // The indentation theme returns a string of {#size} &nbsp; characters.
-      $indentation = [
-        '#theme' => 'indentation',
-        '#size' => $depth,
-      ];
-      $items[] = [
-        '#prefix' => !empty($indentation) ? $this->Renderer->render($indentation) : '',
-        '#type' => 'link',
-        '#title' => $term->name,
-        // The stdClass $term object has no path information, so get it from the
-        // taxonomy term route.
-        '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $term->tid]),
-      ];
+      $depth = ($term->depth - $base_depth);
+      $item = $this->getTermItem($term);
+
+      if (!isset($previous_depth)) {
+        $previous_depth = $depth;
+      }
+
+      if ($depth > $previous_depth) {
+        // Add a new level to the parent array.
+        $parent_array[] = $c;
+        $c = 0;
+      }
+      elseif ($depth < $previous_depth) {
+        // Move the parent array back up a level.
+        $c = array_pop($parent_array);
+
+        // Render the previous group as a sub-list of items.
+
+        // Pull out the whole sub-group that was at the previous level.
+        $item_parent = $parent_array;
+        $item_parent[] = $c;
+        $child_items = NestedArray::getValue($items, $item_parent);
+
+        // Pull out the parent from the children.
+        $child_array = [];
+        $child_array['#type'] = $child_items['#type'];
+        $child_array['#title'] = $child_items['#title'];
+        $child_array['#url'] = $child_items['#url'];
+        unset($child_items['#type'], $child_items['#title'], $child_items['#url']);
+
+        // Add the children as a sub item list.
+        $child_array[0]['#theme'] = 'item_list';
+        $child_array[0]['#items'] = $child_items;
+        NestedArray::setValue($items, $item_parent, $child_array);
+
+        // Start a new index at this level.
+        $c++;
+      }
+      else {
+        // No change in level, just increment the index.
+        $c++;
+      }
+
+      // Set this item value using the parent array plus the current index.
+      $item_parent = $parent_array;
+      $item_parent[] = $c;
+      NestedArray::setValue($items, $item_parent, $item);
+
+      // Update the previous depth.
+      $previous_depth = $depth;
+
     } while ($term = next($tree));
+
+    // If there was a nested subgroup at the end of the list, render it now.
+    $c = array_pop($parent_array);
+    $item_parent = $parent_array;
+    $item_parent[] = $c;
+    $child_items = NestedArray::getValue($items, $item_parent);
+    if (!empty($child_items)) {
+      $child_array['#type'] = $child_items['#type'];
+      $child_array['#title'] = $child_items['#title'];
+      $child_array['#url'] = $child_items['#url'];
+      $child_array[0]['#theme'] = 'item_list';
+      unset($child_items['#type'], $child_items['#title'], $child_items['#url']);
+      $child_array[0]['#items'] = $child_items;
+      NestedArray::setValue($items, $item_parent, $child_array);
+    }
 
     return $items;
   }
 
-}
+  function getTermItem($term) {
+    return [
+      '#type' => 'link',
+      '#title' => $term->name,
+      // The stdClass $term object has no path information, so get it from the
+      // taxonomy term route.
+      '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $term->tid]),
+    ];
 
+  }
+
+}
