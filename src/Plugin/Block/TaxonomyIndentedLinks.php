@@ -21,9 +21,6 @@ use Drupal\taxonomy\TermStorageInterface;
 // Required to construct the term routes.
 use Drupal\Core\Url;
 
-// Used to render the indentation.
-use Drupal\Core\Render\Renderer;
-
 // Massage the array.
 use Drupal\Component\Utility\NestedArray;
 
@@ -49,23 +46,12 @@ class TaxonomyIndentedLinks extends BlockBase implements ContainerFactoryPluginI
    */
   protected $TermStorage;
 
-
-  /**
-   * Renderer
-   *
-   * A better alternative to using drupal_render(), inject the Renderer.
-   *
-   * @var Drupal\Core\Render\Renderer
-   */
-  protected $Renderer;
-
   /**
    * {@inheritdoc}
    */
-  public function __construct(array $configuration, $plugin_id, array $plugin_definition, TermStorageInterface $term_storage, Renderer $renderer) {
+  public function __construct(array $configuration, $plugin_id, array $plugin_definition, TermStorageInterface $term_storage) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->TermStorage = $term_storage;
-    $this->Renderer = $renderer;
   }
 
   /**
@@ -76,8 +62,7 @@ class TaxonomyIndentedLinks extends BlockBase implements ContainerFactoryPluginI
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity.manager')->getStorage('taxonomy_term'),
-      $container->get('renderer')
+      $container->get('entity.manager')->getStorage('taxonomy_term')
     );
   }
 
