@@ -135,7 +135,7 @@ class TaxonomyIndentedLinks extends BlockBase implements ContainerFactoryPluginI
 
     // If there are no terms, don't do anything.
     if (empty($term)) {
-      return $build;
+      return $items;
     }
     else {
       $base_depth = $term->depth;
