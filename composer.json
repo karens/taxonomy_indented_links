@@ -1,0 +1,11 @@
+{
+  "name": "karens/taxonomy_indented_links",
+  "type": "drupal-custom-module",
+  "description": "Creates blocks that display nested links to taxonomy terms.",
+  "keywords": ["Drupal"],
+  "license": "GPL-2.0+",
+  "minimum-stability": "dev",
+  "require": {
+    "drupal/address": "^1.0"
+  }
+}
